@@ -85,29 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Groq PHP Chatbot</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f0f0f0; }
-        .container { background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1 { color: #333; text-align: center; }
-        #chat-container { border: 1px solid #ccc; height: 400px; overflow-y: scroll; padding: 10px; margin-bottom: 20px; background-color: #fff; }
-        #user-input { width: 70%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        #send-button, .submit-button { width: 25%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        #model-select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        .image-upload { margin-top: 20px; }
-        .image-analysis { margin-top: 20px; border: 1px solid #ccc; padding: 10px; background-color: #fff; }
-        .tabs { display: flex; justify-content: center; margin-bottom: 20px; }
-        .tab { padding: 10px 20px; cursor: pointer; background-color: #ddd; border: none; border-radius: 5px 5px 0 0; }
-        .tab.active { background-color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .user-message { background-color: #e6f3ff; padding: 5px 10px; border-radius: 10px; margin: 5px 0; }
-        .bot-message { background-color: #f0f0f0; padding: 5px 10px; border-radius: 10px; margin: 5px 0; }
-        #image-preview { max-width: 100%; margin-top: 10px; }
-        .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
-        .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; }
-        .file-input-wrapper .btn { display: inline-block; padding: 8px 12px; cursor: pointer; background-color: #4CAF50; color: white; border: none; border-radius: 5px; }
-        #image-prompt { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">

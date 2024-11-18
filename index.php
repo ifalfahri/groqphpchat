@@ -17,6 +17,7 @@ if (!isset($_SESSION['chatHistory'])) {
 
 $botResponse = '';
 $imageAnalysis = '';
+$uploadedImage = '';
 
 $availableModels = [
     'llama3-8b-8192' => 'LLaMA 3 8B',
@@ -61,7 +62,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
         $imagePath = $_FILES['image']['tmp_name'];
+        $imageType = $_FILES['image']['type'];
         $prompt = $_POST['image_prompt'];
+
+        // Create a data URL for the uploaded image
+        $imageData = base64_encode(file_get_contents($imagePath));
+        $uploadedImage = "data:$imageType;base64,$imageData";
 
         try {
             $analysis = $groq->vision()->analyze($imagePath, $prompt);
@@ -78,14 +84,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Groq PHP Chatbot</title>
+    <title>Groq PHP Chatbot</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f0f0f0; }
         .container { background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         h1 { color: #333; text-align: center; }
         #chat-container { border: 1px solid #ccc; height: 400px; overflow-y: scroll; padding: 10px; margin-bottom: 20px; background-color: #fff; }
         #user-input { width: 70%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        #send-button { width: 25%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        #send-button, .submit-button { width: 25%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
         #model-select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; }
         .image-upload { margin-top: 20px; }
         .image-analysis { margin-top: 20px; border: 1px solid #ccc; padding: 10px; background-color: #fff; }
@@ -96,17 +102,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .tab-content.active { display: block; }
         .user-message { background-color: #e6f3ff; padding: 5px 10px; border-radius: 10px; margin: 5px 0; }
         .bot-message { background-color: #f0f0f0; padding: 5px 10px; border-radius: 10px; margin: 5px 0; }
+        #image-preview { max-width: 100%; margin-top: 10px; }
+        .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
+        .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; }
+        .file-input-wrapper .btn { display: inline-block; padding: 8px 12px; cursor: pointer; background-color: #4CAF50; color: white; border: none; border-radius: 5px; }
+        #image-prompt { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Enhanced Groq PHP Chatbot</h1>
         <div class="tabs">
-            <button class="tab active" onclick="openTab(event, 'chatTab')">Chatbot</button>
+            <button class="tab" onclick="openTab(event, 'chatTab')">Chatbot</button>
             <button class="tab" onclick="openTab(event, 'imageTab')">Image Analysis</button>
         </div>
 
-        <div id="chatTab" class="tab-content active">
+        <div id="chatTab" class="tab-content">
             <div id="chat-container">
                 <?php foreach ($_SESSION['chatHistory'] as $message): ?>
                     <div class="<?= $message['role'] === 'user' ? 'user-message' : 'bot-message' ?>">
@@ -126,16 +137,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <div id="imageTab" class="tab-content">
-            <form method="post" action="" enctype="multipart/form-data">
-                <input type="file" name="image" accept="image/*" required>
-                <input type="text" name="image_prompt" placeholder="Enter prompt for image analysis" required>
-                <input type="submit" value="Analyze Image">
+            <form id="image-form" method="post" action="" enctype="multipart/form-data">
+                <div class="file-input-wrapper">
+                    <button class="btn">Choose an image</button>
+                    <input type="file" name="image" accept="image/*" required onchange="previewImage(event)">
+                </div>
+                <input type="text" id="image-prompt" name="image_prompt" placeholder="Enter prompt for image analysis" required>
+                <input type="submit" class="submit-button" value="Analyze Image">
             </form>
+            <img id="image-preview" src="" alt="Image preview" style="display: none;">
             <?php if (!empty($imageAnalysis)): ?>
                 <div class="image-analysis">
                     <h3>Image Analysis Result:</h3>
                     <p><?= htmlspecialchars($imageAnalysis) ?></p>
                 </div>
+            <?php endif; ?>
+            <?php if (!empty($uploadedImage)): ?>
+                <img src="<?= $uploadedImage ?>" alt="Uploaded image" style="max-width: 100%; margin-top: 10px;">
             <?php endif; ?>
         </div>
     </div>
@@ -198,7 +216,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             })
             .catch(error => {
                 console.error('Error:', error);
-                appendMessage('Error', 'An error occurred while sending the message.', 'bot-message');
             });
 
             form.reset();
@@ -220,6 +237,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
+
+        function previewImage(event) {
+            var reader = new FileReader();
+            reader.onload = function(){
+                var output = document.getElementById('image-preview');
+                output.src = reader.result;
+                output.style.display = 'block';
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        // Set the active tab based on the last action
+        window.onload = function() {
+            var activeTab = '<?php echo !empty($_POST['image_prompt']) ? "imageTab" : "chatTab"; ?>';
+            openTab({ currentTarget: document.querySelector(`.tab[onclick*="${activeTab}"]`) }, activeTab);
+        }
+
+        // Prevent form submission from changing the active tab
+        document.getElementById('image-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch('', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.open();
+                document.write(html);
+                document.close();
+                openTab({ currentTarget: document.querySelector('.tab[onclick*="imageTab"]') }, 'imageTab');
+            });
+        });
 
         // Scroll to bottom of chat container
         var chatContainer = document.getElementById('chat-container');

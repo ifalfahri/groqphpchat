@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container">
-        <h1>Enhanced Groq PHP Chatbot</h1>
+        <h1>Groq PHP Chatbot</h1>
         <div class="tabs">
             <button class="tab" onclick="openTab(event, 'chatTab')">Chatbot</button>
             <button class="tab" onclick="openTab(event, 'imageTab')">Image Analysis</button>
